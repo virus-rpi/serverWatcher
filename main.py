@@ -2,6 +2,7 @@ import os
 import inspect
 import time
 import asyncio
+import requests
 from scanner import get
 from win10toast import ToastNotifier
 
@@ -11,6 +12,15 @@ toast = ToastNotifier()
 
 def notify(title, text):
     toast.show_toast("Watchtower: " + title, text, duration=5, threaded=True)
+
+
+def join(ip, port):
+    try:
+        requests.get(f'http://localhost:25567/disconnect')
+        time.sleep(1)
+        requests.get(f'http://localhost:25567/connect?ip={ip}&port={port}')
+    except requests.exceptions.ConnectionError:
+        pass
 
 
 class eye:
@@ -71,6 +81,8 @@ class eye:
                 f"Server {ip}: Online players changed: {data_prev['players']['online']} -> {data_new['players']['online']}"
             )
             notify(ip, f"Online players changed: {data_prev['players']['online']} -> {data_new['players']['online']}")
+            if data_new['players']['online'] < data_new['players']['max']:
+                join(ip, port)
 
         # prev_players = set([entry['name'] for entry in data_prev['players']['players']])
         # new_players = set([entry['name'] for entry in data_new['players']['players']])
@@ -93,7 +105,6 @@ class eye:
         if data_prev['motd'] != data_new['motd']:
             print(f"Server {ip}: Motd changed: {data_prev['motd']} -> {data_new['motd']}")
             notify(ip, f"Motd changed: {data_prev['motd']} -> {data_new['motd']}")
-
 
 
 if __name__ == "__main__":
